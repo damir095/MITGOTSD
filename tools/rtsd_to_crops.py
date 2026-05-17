@@ -31,6 +31,8 @@ TARGETS = {
     "5_19_1": (43, "Pedestrian crossing"),
     "5_20":   (44, "Speed bump"),
     "6_4":    (45, "Parking"),
+    "3_27":   (46, "No stopping"),
+    "3_28":   (47, "No parking"),
 }
 
 

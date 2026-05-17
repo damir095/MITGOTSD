@@ -42,6 +42,7 @@ CLASS_NAMES = [
     "End no passing >3.5t",
     # ── RU (RTSD) ──
     "Pedestrian crossing", "Speed bump",          "Parking",
+    "No stopping",         "No parking",
 ]
 
 assert len(CLASS_NAMES) == NUM_CLASSES

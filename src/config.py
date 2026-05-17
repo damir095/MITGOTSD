@@ -28,9 +28,10 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
-# 43 German GTSRB + 3 RU (43 pedestrian crossing, 44 speed bump, 45 parking).
+# 43 German GTSRB + 5 RU (43 ped-crossing, 44 speed bump, 45 parking,
+# 46 no-stopping, 47 no-parking).
 # Must stay in lockstep with camera.CLASS_NAMES (asserted there).
-NUM_CLASSES = 46
+NUM_CLASSES = 48
 
 # RU sign crops produced by tools/rtsd_to_crops.py:
 #   <RTSD_CROPS>/{train,val}/{43,44,45}/*.jpg
