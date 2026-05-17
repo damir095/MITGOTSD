@@ -43,7 +43,9 @@ def eval_epoch(model, loader, criterion, device):
         imgs, labels = imgs.to(device), labels.to(device)
         with autocast("cuda", enabled=USE_AMP):
             logits = model(imgs)
-            loss   = criterion(logits, labels)
+        # CE in fp32: fp16 logits on an under-trained net overflow -> nan
+        # val loss (cosmetic for acc-based selection, but hides the signal).
+        loss = criterion(logits.float(), labels)
 
         total_loss += loss.item() * labels.size(0)
         correct    += (logits.argmax(1) == labels).sum().item()

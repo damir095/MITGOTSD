@@ -192,8 +192,27 @@ def get_loaders(root: Path = KAGGLE_ROOT, rtsd_root: Path = RTSD_CROPS):
           f"val: GTSRB={val_size} + RTSD={len(rtsd_va)}  |  "
           f"test(GTSRB only)={len(test_ds)}")
 
+    # Class-balanced sampling. RTSD 'pedestrian crossing' has ~22k samples vs
+    # a few hundred for many GTSRB classes — without this the model collapses
+    # toward the dominant class and German recall craters (0.99 -> 0.79).
+    # Concat order is [train_split ..., rtsd_tr ...]; weight = 1/class_count.
+    import collections
+    if isinstance(train_set, Concat):
+        labels = [train_ds.samples[i][1] for i in train_split.indices] \
+                 + [l for _, l in rtsd_tr.samples]
+    else:
+        labels = [train_ds.samples[i][1] for i in train_split.indices]
+    cnt = collections.Counter(labels)
+    weights = [1.0 / cnt[l] for l in labels]
+    sampler = torch.utils.data.WeightedRandomSampler(
+        weights, num_samples=len(labels), replacement=True
+    )
+    print(f"  class balance: {len(cnt)} classes, "
+          f"min/max per-class = {min(cnt.values())}/{max(cnt.values())} "
+          f"-> WeightedRandomSampler")
+
     train_loader = DataLoader(
-        train_set, batch_size=BATCH_SIZE, shuffle=True,
+        train_set, batch_size=BATCH_SIZE, sampler=sampler,
         num_workers=NUM_WORKERS, pin_memory=True
     )
     val_loader = DataLoader(
