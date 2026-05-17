@@ -44,10 +44,13 @@ _NUM_CLASSES = len(CLASS_NAMES)   # 43
 _MAX_ENTROPY = np.log(_NUM_CLASSES)  # ≈ 3.76 — entropy of uniform distribution
 
 # ── Tunable constants ─────────────────────────────────────────────────────
-CONF_THRESHOLD  = 0.92   # raised from 0.85 — model trained only on signs, so
+CONF_THRESHOLD  = 0.96   # raised 0.92→0.96 — model trained only on signs, so
                          # any patch gets *some* class; higher bar = fewer false alarms
-ENTROPY_MAX     = 0.55   # fraction of max entropy; reject if distribution too flat
-                         # i.e. model is uncertain → probably not a real sign
+ENTROPY_MAX     = 0.40   # fraction of max entropy; reject if distribution too flat
+                         # (lowered 0.55→0.40 to drop more "spread" non-sign patches)
+MARGIN_MIN      = 0.30   # require top1 − top2 ≥ this. A real sign wins by a clear
+                         # margin; "confidently-wrong" non-sign patches often hover
+                         # between two similar classes even at high top1 confidence.
 PERSIST_FRAMES  = 6      # frames to keep a track alive without a new detection
 GRID_CELL       = 50     # px — position grid for track identity
 DETECT_WIDTH    = 640    # px — detector runs on frame scaled to this width
@@ -151,7 +154,8 @@ def run(model_path: str, cam_id: int | str = 0, input_size: int = 48):
     model = load_keras_model(model_path)
     print(f"Модель загружена: {model_path}  (вход {input_size}×{input_size})")
     print(f"Порог уверенности: {CONF_THRESHOLD:.2f}  "
-          f"| энтропийный порог: {ENTROPY_MAX:.2f} × max")
+          f"| энтропийный порог: {ENTROPY_MAX:.2f} × max"
+          f"  | мин. разрыв top1−top2: {MARGIN_MIN:.2f}")
     print("Клавиши: [q] выход  [s] снимок  [d] маска  [+/-] порог")
 
     cap = cv2.VideoCapture(cam_id)
@@ -204,6 +208,10 @@ def run(model_path: str, cam_id: int | str = 0, input_size: int = 48):
                 top2 = np.argsort(probs)[::-1][:2]
                 cls1, conf1 = int(top2[0]), float(probs[top2[0]])
                 cls2, conf2 = int(top2[1]), float(probs[top2[1]])
+                # Margin gate — reject ambiguous top1/top2 (likely a non-sign
+                # patch the sign-only classifier can't decide on).
+                if conf1 - conf2 < MARGIN_MIN:
+                    continue
                 candidates.append((cls1, conf1, cls2, conf2, x, y, w, h))
                 scores.append(conf1)
 

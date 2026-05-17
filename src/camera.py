@@ -21,7 +21,9 @@ from PIL import Image
 from src.config import IMG_SIZE, MEAN, STD, NUM_CLASSES, CKPT_DIR
 from src.model import build_model
 
-# Human-readable names for the 43 GTSRB classes
+# Canonical class names. 0..42 = German GTSRB (order = ClassId), then
+# 43..45 = RU signs from RTSD (tools/rtsd_to_crops.py). Single source of
+# truth — keep length == config.NUM_CLASSES (asserted below).
 CLASS_NAMES = [
     "Speed limit (20)",    "Speed limit (30)",    "Speed limit (50)",
     "Speed limit (60)",    "Speed limit (70)",    "Speed limit (80)",
@@ -38,6 +40,8 @@ CLASS_NAMES = [
     "Go straight or right","Go straight or left", "Keep right",
     "Keep left",           "Roundabout",          "End no passing",
     "End no passing >3.5t",
+    # ── RU (RTSD) ──
+    "Pedestrian crossing", "Speed bump",          "Parking",
 ]
 
 assert len(CLASS_NAMES) == NUM_CLASSES
