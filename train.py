@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import torch
 
-from src.config import DATA_RAW, CKPT_DIR
+from src.config import KAGGLE_ROOT, CKPT_DIR
 from src.dataset import get_loaders
 from src.model import build_model
 from src.train import run_training
@@ -23,19 +23,16 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
-    if not DATA_RAW.exists() or not any(DATA_RAW.iterdir()):
+    if not (KAGGLE_ROOT / "Train.csv").exists():
         print(
-            f"\nDataset not found at {DATA_RAW}\n"
-            "Download GTSRB from https://benchmark.ini.rub.de/gtsrb_dataset.html\n"
-            "and extract so the structure is:\n"
-            "  data/raw/Train/<ClassId>/  (PPM images + GT-*.csv)\n"
-            "  data/raw/Test/             (PPM images)\n"
-            "  data/raw/GT-final_test.csv\n"
+            f"\nKaggle GTSRB copy not found at {KAGGLE_ROOT}\n"
+            "Expected Train.csv / Test.csv (comma-CSV) + Train/ Test/ .png.\n"
+            "Set GTSRB_KAGGLE_ROOT to the dataset root if it lives elsewhere.\n"
         )
         return
 
     print("Loading data...")
-    train_loader, val_loader, test_loader = get_loaders(DATA_RAW)
+    train_loader, val_loader, test_loader = get_loaders(KAGGLE_ROOT)
     print(f"  train={len(train_loader.dataset)}  "
           f"val={len(val_loader.dataset)}  "
           f"test={len(test_loader.dataset)}")
@@ -48,6 +45,12 @@ def main():
     model.load_state_dict(torch.load(CKPT_DIR / "best.pt", map_location=device))
     y_true, y_pred = predict(model, test_loader, device)
     print_report(y_true, y_pred)
+
+    # ── Out-of-domain hold-out (the metric that actually matters) ───────────
+    # GTSRB-test accuracy only proves clean-domain memorisation. If you have
+    # captured real webcam crops (src.holdout_capture), report on them too.
+    from src.evaluate_holdout import run_holdout
+    run_holdout(model, device, Path("data/holdout"))
 
 
 if __name__ == "__main__":
