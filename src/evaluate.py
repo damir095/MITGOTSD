@@ -29,8 +29,14 @@ def predict(model, loader, device):
 
 
 def print_report(y_true, y_pred):
-    recall = recall_score(y_true, y_pred, average="macro")
-    f1     = f1_score(y_true, y_pred, average="macro")
+    # Pin labels to the full class space: the GTSRB test set never contains
+    # the RU classes, so y_true/y_pred carry fewer than NUM_CLASSES uniques —
+    # without explicit labels, classification_report crashes on the mismatch.
+    labels = list(range(NUM_CLASSES))
+    recall = recall_score(y_true, y_pred, average="macro",
+                          labels=labels, zero_division=0)
+    f1     = f1_score(y_true, y_pred, average="macro",
+                      labels=labels, zero_division=0)
     acc    = (y_true == y_pred).mean()
 
     print(f"\n{'='*50}")
@@ -38,7 +44,8 @@ def print_report(y_true, y_pred):
     print(f"  Recall   (macro): {recall:.4f}  {'✓' if recall >= 0.95 else '✗'} (target ≥ 0.95)")
     print(f"  F1       (macro): {f1:.4f}  {'✓' if f1 >= 0.95 else '✗'} (target ≥ 0.95)")
     print(f"{'='*50}\n")
-    print(classification_report(y_true, y_pred, target_names=CLASS_NAMES))
+    print(classification_report(y_true, y_pred, labels=labels,
+                                target_names=CLASS_NAMES, zero_division=0))
 
     return {"accuracy": acc, "recall": recall, "f1": f1}
 
