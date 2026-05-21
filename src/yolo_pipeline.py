@@ -37,7 +37,8 @@ from PIL import Image
 from src.config import CKPT_DIR
 from src.model import build_model
 from src.dataset import get_transforms
-from src.camera import CLASS_NAMES   # English, length-43, asserted there
+from src.camera import CLASS_NAMES   # 48-class RU, asserted there
+from src.draw_ru import draw_texts    # cv2.putText can't do Cyrillic
 
 _YOLO_DEFAULT = Path("runs/detect/experiments/yolo/gtsdb/weights/best.pt")
 
@@ -148,17 +149,18 @@ def run(cam, yolo_path, clf_path, yolo_imgsz, yolo_conf,
         else:
             shown = dets
 
+        text_items = []
         for (x1, y1, x2, y2), cid, cf in shown:
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 0), 2)
-            label = f"{CLASS_NAMES[cid]} {cf*100:.0f}%"
-            cv2.putText(frame, label, (x1, max(y1 - 8, 14)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 220, 0), 2)
+            text_items.append((f"{CLASS_NAMES[cid]} {cf*100:.0f}%",
+                               (x1, max(y1 - 24, 0)), (0, 220, 0), 20))
 
         now = time.time()
         fps = 1.0 / max(now - prev, 1e-6)
         prev = now
-        cv2.putText(frame, f"FPS {fps:.1f}  signs {len(shown)}", (10, 24),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+        text_items.append((f"FPS {fps:.1f}  знаков {len(shown)}",
+                           (10, 6), (200, 200, 200), 18))
+        draw_texts(frame, text_items)   # one PIL round-trip per frame
 
         if save is not None:
             if writer is None:

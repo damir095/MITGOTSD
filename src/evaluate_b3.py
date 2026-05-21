@@ -159,10 +159,13 @@ def main():
                     per_cls[cid][0] += 1
 
         if i < a.dump:
+            from src.draw_ru import draw_texts
+            items = []
             for (x1, y1, x2, y2), pc in zip(preds, pred_cls):
                 cv2.rectangle(bgr, (x1, y1), (x2, y2), (0, 220, 0), 2)
-                cv2.putText(bgr, CLASS_NAMES[pc], (x1, max(y1 - 6, 12)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 220, 0), 2)
+                items.append((CLASS_NAMES[pc], (x1, max(y1 - 22, 0)),
+                              (0, 220, 0), 18))
+            draw_texts(bgr, items)
             cv2.imwrite(str(dump_dir / ip.name), bgr)
 
     det_rec = n_matched / n_gt if n_gt else 0.0

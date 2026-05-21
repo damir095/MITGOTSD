@@ -21,28 +21,29 @@ from PIL import Image
 from src.config import IMG_SIZE, MEAN, STD, NUM_CLASSES, CKPT_DIR
 from src.model import build_model
 
-# Canonical class names. 0..42 = German GTSRB (order = ClassId), then
-# 43..45 = RU signs from RTSD (tools/rtsd_to_crops.py). Single source of
-# truth — keep length == config.NUM_CLASSES (asserted below).
+# Canonical class names (RU). 0..42 = немецкие GTSRB (порядок = ClassId),
+# 43..47 = русские из RTSD. Единый источник правды — длина == NUM_CLASSES
+# (assert ниже). Для рисования кириллицы используем draw_ru.draw_texts,
+# а не cv2.putText (та не умеет UTF-8).
 CLASS_NAMES = [
-    "Speed limit (20)",    "Speed limit (30)",    "Speed limit (50)",
-    "Speed limit (60)",    "Speed limit (70)",    "Speed limit (80)",
-    "End speed limit (80)","Speed limit (100)",   "Speed limit (120)",
-    "No passing",          "No passing >3.5t",    "Right-of-way",
-    "Priority road",       "Yield",               "Stop",
-    "No vehicles",         "No vehicles >3.5t",   "No entry",
-    "General caution",     "Dangerous curve L",   "Dangerous curve R",
-    "Double curve",        "Bumpy road",          "Slippery road",
-    "Road narrows R",      "Road work",           "Traffic signals",
-    "Pedestrians",         "Children crossing",   "Bicycles crossing",
-    "Beware ice/snow",     "Wild animals",        "End restrictions",
-    "Turn right ahead",    "Turn left ahead",     "Ahead only",
-    "Go straight or right","Go straight or left", "Keep right",
-    "Keep left",           "Roundabout",          "End no passing",
-    "End no passing >3.5t",
+    "Огранич. 20",         "Огранич. 30",         "Огранич. 50",
+    "Огранич. 60",         "Огранич. 70",         "Огранич. 80",
+    "Конец огр. 80",       "Огранич. 100",        "Огранич. 120",
+    "Обгон запрещён",      "Обгон груз. запр.",   "Главная (приоритет)",
+    "Главная дорога",      "Уступи дорогу",       "СТОП",
+    "Движение запрещено",  "Груз. движ. запр.",   "Въезд запрещён",
+    "Прочие опасности",    "Опасн. поворот налево", "Опасн. поворот направо",
+    "Двойной поворот",     "Неровная дорога",     "Скользкая дорога",
+    "Сужение справа",      "Дорожные работы",     "Светофор",
+    "Пешеходы",            "Дети",                "Велосипедисты",
+    "Лёд/снег",            "Дикие животные",      "Конец ограничений",
+    "Поворот направо",     "Поворот налево",      "Только прямо",
+    "Прямо или направо",   "Прямо или налево",    "Объезд справа",
+    "Объезд слева",        "Круговое движение",   "Конец зоны обгона",
+    "Конец зоны обгона груз.",
     # ── RU (RTSD) ──
-    "Pedestrian crossing", "Speed bump",          "Parking",
-    "No stopping",         "No parking",
+    "Пешеходный переход",  "Искусств. неровность", "Парковка",
+    "Остановка запрещена", "Стоянка запрещена",
 ]
 
 assert len(CLASS_NAMES) == NUM_CLASSES
@@ -86,13 +87,14 @@ def draw_overlay(frame, cls_id: int, conf: float, fps: float):
 
     # green square around the classification region
     cv2.rectangle(frame, (x0, y0), (x0 + size, y0 + size), (0, 220, 0), 2)
-
-    label = f"{CLASS_NAMES[cls_id]}  {conf*100:.1f}%"
     cv2.rectangle(frame, (0, 0), (w, 50), (0, 0, 0), -1)
-    cv2.putText(frame, label, (10, 35),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 220, 0), 2)
-    cv2.putText(frame, f"FPS: {fps:.1f}", (w - 120, 35),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 200), 1)
+
+    from src.draw_ru import draw_texts
+    draw_texts(frame, [
+        (f"{CLASS_NAMES[cls_id]}  {conf*100:.1f}%", (10, 8),
+         (0, 220, 0), 28),
+        (f"FPS: {fps:.1f}", (w - 130, 12), (200, 200, 200), 20),
+    ])
 
 
 def run(weights: Path, cam_id: int | str = 0, device_str: str = "auto"):
