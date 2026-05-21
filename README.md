@@ -1,17 +1,21 @@
-# Project
+# B3 — распознавание дорожных знаков
 
-Workspace for tooling, scripts, and non-wiki project files.
+YOLOv8n детектор + EfficientNet-B0 классификатор на 48 классов
+(43 немецких GTSRB + 5 русских RTSD). Подписи на русском.
 
-## tools/
+**Полная инструкция по установке и запуску — `INSTRUCTIONS.md`.**
 
-Optional CLI utilities for operating on the wiki:
+Быстрый старт:
+```powershell
+# 1. Установить PyTorch с CUDA отдельно (см. INSTRUCTIONS.md §1)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install -r requirements.txt
 
-- **search.py** (build when needed) — full-text search over `wiki/pages/`
-- Other scripts as the project grows
+# 2. Прогон на видео
+python -m src.yolo_pipeline --cam путь\к\видео.mp4 --save out.mp4 --no-show --yolo-imgsz 1280
 
-## Getting started
+# 3. Прогон с веб-камеры
+python -m src.yolo_pipeline --cam 0
+```
 
-1. Drop source documents into `wiki/raw/`.
-2. Open a Claude Code session in this directory (`CLAUDE.md` loads automatically).
-3. Say `ingest [filename]` to process a source.
-4. Ask questions; say `lint` periodically to keep the wiki healthy.
+Дополнительно: `CLAUDE.md` — архитектура и накопленные уроки проекта.
